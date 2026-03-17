@@ -28,6 +28,9 @@ export default function RootLayout({
               <Link href="/demo/feedback" className="hover:text-slate-900">
                 Demo Feedback View
               </Link>
+              <Link href="/demo/qr" className="hover:text-slate-900">
+                QR Code
+              </Link>
             </nav>
           </div>
         </header>

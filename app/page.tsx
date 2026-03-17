@@ -63,6 +63,12 @@ export default function HomePage() {
           </div>
         </Card>
       </section>
+
+      <footer className="mt-24 text-center text-sm text-slate-500">
+        <Link href="/about" className="hover:underline">
+          About the Builder
+        </Link>
+      </footer>
     </main>
   );
 }

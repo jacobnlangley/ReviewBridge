@@ -11,14 +11,16 @@ type FeedbackExperienceProps = {
   slug: string;
   businessName: string;
   locationName: string;
-  reviewLink: string | null;
+  googleReviewLink: string | null;
+  yelpReviewLink: string | null;
 };
 
 export function FeedbackExperience({
   slug,
   businessName,
   locationName,
-  reviewLink,
+  googleReviewLink,
+  yelpReviewLink,
 }: FeedbackExperienceProps) {
   const [sentiment, setSentiment] = useState<SentimentChoice | null>(null);
 
@@ -31,21 +33,36 @@ export function FeedbackExperience({
 
       {sentiment === "positive" ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <p className="mb-3 text-sm text-emerald-900">
-            Thanks for sharing. If you are open to it, a public review helps {businessName} a lot.
+          <h2 className="text-base font-semibold text-emerald-900">Thanks for the great feedback!</h2>
+          <p className="mb-3 mt-1 text-sm text-emerald-900">
+            If you&apos;d be willing, sharing your experience publicly helps this business a lot.
           </p>
-          {reviewLink ? (
-            <Link
-              href={reviewLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
-            >
-              Leave a public review
-            </Link>
+          {googleReviewLink || yelpReviewLink ? (
+            <div className="flex flex-wrap gap-2">
+              {googleReviewLink ? (
+                <Link
+                  href={googleReviewLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
+                >
+                  Leave a Google Review
+                </Link>
+              ) : null}
+              {yelpReviewLink ? (
+                <Link
+                  href={yelpReviewLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex rounded-lg border border-emerald-700 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                >
+                  Leave a Yelp Review
+                </Link>
+              ) : null}
+            </div>
           ) : (
             <p className="text-sm text-emerald-900">
-              Thanks again for the positive feedback. A public review link is not configured yet.
+              Thanks again for the positive feedback. Public review links are not configured yet.
             </p>
           )}
         </div>

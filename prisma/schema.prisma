@@ -17,15 +17,17 @@ model Business {
 }
 
 model Location {
-  id         String     @id @default(cuid())
-  businessId String
-  name       String
-  slug       String     @unique
-  reviewLink String?
-  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  feedback   Feedback[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  businessId       String
+  name             String
+  slug             String     @unique
+  reviewLink       String?
+  googleReviewLink String?
+  yelpReviewLink   String?
+  business         Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  feedback         Feedback[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@index([businessId])
 }
@@ -35,6 +37,9 @@ model Feedback {
   locationId    String
   sentiment     Sentiment
   message       String?
+  wantsFollowUp Boolean   @default(false)
+  followUpPreference FollowUpPreference?
+  phone         String?
   customerEmail String?
   customerName  String?
   location      Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
@@ -48,4 +53,10 @@ enum Sentiment {
   POSITIVE
   NEUTRAL
   NEGATIVE
+}
+
+enum FollowUpPreference {
+  TEXT
+  CALL
+  EMAIL
 }

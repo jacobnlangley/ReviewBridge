@@ -251,6 +251,38 @@ This repository uses Jacob Langley's personal GitHub identity at the repo level.
 
 Do not use `fullh3art` credentials in this repository.
 
+### GitHub Account Switching Workflow
+
+Use GitHub CLI account switching before any `gh` command (repo create, PRs, issue actions, release actions) and before first push in a new local clone.
+
+Expected workflow:
+
+1. Detect remote owner from `origin`.
+2. Switch `gh` auth to that owner.
+3. Verify active account matches expected owner.
+4. Run the GitHub operation.
+
+Preferred command:
+
+```bash
+gh_repo_user_switch
+```
+
+Manual fallback:
+
+```bash
+gh auth switch -u jacobnlangley
+gh auth status -h github.com
+```
+
+If `jacobnlangley` is not authenticated on this machine yet, authenticate first:
+
+```bash
+gh auth login -h github.com -p https
+```
+
+Agents must not continue with GitHub operations while the active `gh` account is incorrect.
+
 ## 13) Definition of Done
 
 For early iterations, work is done when:

@@ -10,10 +10,37 @@ type FeedbackPageProps = {
 export default async function FeedbackPage({ params }: FeedbackPageProps) {
   const { slug } = await params;
 
-  const location = await prisma.location.findUnique({
-    where: { slug },
-    include: { business: true },
-  });
+  let location: {
+    slug: string;
+    name: string;
+    googleReviewLink: string | null;
+    yelpReviewLink: string | null;
+    business: { name: string };
+  } | null = null;
+
+  try {
+    location = await prisma.location.findUnique({
+      where: { slug },
+      include: { business: true },
+    });
+  } catch {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-4 py-10 md:py-14">
+        <Card className="space-y-3">
+          <h1 className="text-xl font-semibold text-slate-900">Demo data is not ready yet</h1>
+          <p className="text-sm text-slate-600">
+            This page needs a database connection and seeded demo records.
+          </p>
+          <p className="text-sm text-slate-600">
+            Set <code>DATABASE_URL</code> in <code>.env</code>, then run migrations and seed.
+          </p>
+          <Link href="/" className="text-sm font-medium text-slate-900 underline">
+            Go back to homepage
+          </Link>
+        </Card>
+      </main>
+    );
+  }
 
   if (!location) {
     return (
@@ -49,7 +76,8 @@ export default async function FeedbackPage({ params }: FeedbackPageProps) {
           slug={location.slug}
           businessName={location.business.name}
           locationName={location.name}
-          reviewLink={location.reviewLink}
+          googleReviewLink={location.googleReviewLink}
+          yelpReviewLink={location.yelpReviewLink}
         />
       </Card>
     </main>

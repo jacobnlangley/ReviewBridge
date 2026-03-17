@@ -1,4 +1,4 @@
-import { PrismaClient, Sentiment } from "@prisma/client";
+import { FollowUpPreference, PrismaClient, Sentiment } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +17,8 @@ async function main() {
     update: {
       name: "Downtown",
       reviewLink: "https://example.com/review/demo-coffee-downtown",
+      googleReviewLink: "https://g.page/r/demo-coffee/review",
+      yelpReviewLink: "https://www.yelp.com/writeareview/biz/demo-coffee",
       businessId: business.id,
     },
     create: {
@@ -24,6 +26,8 @@ async function main() {
       name: "Downtown",
       slug: "demo-coffee-downtown",
       reviewLink: "https://example.com/review/demo-coffee-downtown",
+      googleReviewLink: "https://g.page/r/demo-coffee/review",
+      yelpReviewLink: "https://www.yelp.com/writeareview/biz/demo-coffee",
     },
   });
 
@@ -35,6 +39,9 @@ async function main() {
         locationId: location.id,
         sentiment: Sentiment.NEGATIVE,
         message: "My drink took a long time and the order was wrong.",
+        wantsFollowUp: true,
+        followUpPreference: FollowUpPreference.TEXT,
+        phone: "555-123-4567",
         customerName: "Taylor",
         customerEmail: "taylor@example.com",
       },
@@ -42,12 +49,16 @@ async function main() {
         locationId: location.id,
         sentiment: Sentiment.NEUTRAL,
         message: "The staff was kind, but the shop was very busy and hard to navigate.",
+        wantsFollowUp: true,
+        followUpPreference: FollowUpPreference.EMAIL,
         customerName: "Jordan",
+        customerEmail: "jordan@example.com",
       },
       {
         locationId: location.id,
         sentiment: Sentiment.POSITIVE,
         message: "Great coffee and really friendly service.",
+        wantsFollowUp: false,
       },
     ],
   });

@@ -5,6 +5,9 @@ type NotificationInput = {
   locationName: string;
   sentiment: "positive" | "neutral" | "negative";
   message: string | null;
+  wantsFollowUp: boolean;
+  followUpPreference?: "text" | "call" | "email" | null;
+  phone?: string | null;
   customerName?: string | null;
   customerEmail?: string | null;
 };
@@ -33,6 +36,9 @@ export async function sendFeedbackNotification(
     `Location: ${input.locationName}`,
     `Sentiment: ${input.sentiment}`,
     `Message: ${input.message ?? "(no message provided)"}`,
+    `Follow-up requested: ${input.wantsFollowUp ? "Yes" : "No"}`,
+    `Preferred contact method: ${input.followUpPreference ?? "(not selected)"}`,
+    `Phone: ${input.phone ?? "(not provided)"}`,
     `Customer name: ${input.customerName ?? "(not provided)"}`,
     `Customer email: ${input.customerEmail ?? "(not provided)"}`,
   ].join("\n");

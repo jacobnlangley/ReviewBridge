@@ -7,10 +7,10 @@ export default function ThanksPage() {
       <Card className="space-y-3">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Thanks for sharing</h1>
         <p className="text-slate-700">
-          Your feedback was submitted successfully and shared privately with the business owner.
+          Your feedback has been sent privately to the business.
         </p>
         <p className="text-slate-700">
-          They can now use your notes to follow up and improve future experiences.
+          Your notes help them understand what went well and what could be improved.
         </p>
         <Link href="/" className="text-sm font-medium text-slate-900 underline">
           Return home
