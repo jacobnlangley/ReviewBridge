@@ -209,6 +209,27 @@ export default async function DashboardReviewsPage({ searchParams }: DashboardRe
           <Link href="/dashboard" className="text-sm font-medium text-slate-900 underline">
             Manage billing and renewals in Dashboard Home
           </Link>
+
+          <div className="flex flex-wrap gap-3 pt-1">
+            <Link
+              href={`/feedback/${location.slug}`}
+              className="inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Open /feedback/{location.slug}
+            </Link>
+            <Link
+              href="/dashboard/reviews/qr"
+              className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-100"
+            >
+              Open location QR code
+            </Link>
+            <Link
+              href="/dashboard/reviews/feedback"
+              className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-100"
+            >
+              Open customer feedback inbox
+            </Link>
+          </div>
         </Card>
 
         <Card className="space-y-3">

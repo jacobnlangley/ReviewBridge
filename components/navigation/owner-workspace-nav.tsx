@@ -19,13 +19,14 @@ const MODULE_LABELS: Record<DashboardModule, string> = {
 
 export function OwnerWorkspaceNav({ locationSlug, enabledModules }: OwnerWorkspaceNavProps) {
   const pathname = usePathname();
-  const feedbackRoutes = ["/dashboard/reviews", "/dashboard/reviews/qr", `/feedback/${locationSlug}`];
+  const isFeedbackRoute =
+    pathname.startsWith("/dashboard/reviews") || pathname === `/feedback/${locationSlug}`;
   const moduleTabs = enabledModules.filter((module) => module !== "REVIEWS").map((module) => {
     if (module === "FEEDBACK") {
       return {
         module,
         href: "/dashboard/reviews",
-        active: feedbackRoutes.includes(pathname),
+        active: isFeedbackRoute,
       };
     }
 
