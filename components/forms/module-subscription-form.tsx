@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AppModule, ModuleSubscriptionStatus } from "@prisma/client";
 
-type ModuleKey = Exclude<AppModule, "FEEDBACK" | "REVIEWS">;
+type ModuleKey = Exclude<AppModule, "FEEDBACK">;
 type ModuleStatus = ModuleSubscriptionStatus;
 
 type ModuleSubscriptionItem = {
@@ -26,11 +26,13 @@ type ModuleSubscriptionResponse = {
 };
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
+  REVIEWS: "Reviews",
   SCHEDULER: "Last-Minute Scheduler",
   LOYALTY: "Loyalty Builder",
 };
 
 const MODULE_HELP_TEXT: Record<ModuleKey, string> = {
+  REVIEWS: "Control access to your core private feedback and review workflow.",
   SCHEDULER: "Launch last-minute discounted appointment slots to fill your calendar fast.",
   LOYALTY: "Run simple repeat-visit offers and loyalty campaigns.",
 };

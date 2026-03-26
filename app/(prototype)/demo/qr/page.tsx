@@ -66,8 +66,8 @@ export default async function DemoQrPage() {
   const publicFeedbackUrl = `${getAppUrl()}/feedback/${location.slug}`;
   const manageToken = createManageToken({ businessId: location.business.id });
   const manageHref = manageToken
-    ? `/manage/${location.slug}?token=${encodeURIComponent(manageToken)}`
-    : `/manage/${location.slug}`;
+    ? `/dashboard/reviews?slug=${encodeURIComponent(location.slug)}&token=${encodeURIComponent(manageToken)}`
+    : `/dashboard/reviews?slug=${encodeURIComponent(location.slug)}`;
 
   await trackValidationEvent({
     event: validationEvent.qrViewed,

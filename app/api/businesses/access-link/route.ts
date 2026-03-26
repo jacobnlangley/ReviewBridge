@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const managePath = `/manage/${location.slug}?token=${encodeURIComponent(manageToken)}`;
+  const managePath = `/dashboard/reviews?slug=${encodeURIComponent(location.slug)}&token=${encodeURIComponent(manageToken)}`;
 
   await trackValidationEvent({
     event: validationEvent.ownerAccessLinkIssued,

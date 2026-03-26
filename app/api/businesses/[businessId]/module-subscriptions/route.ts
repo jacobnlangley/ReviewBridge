@@ -6,7 +6,11 @@ import { OWNER_SESSION_COOKIE_NAME, isOwnerSessionValidForBusiness } from "@/lib
 import { prisma } from "@/lib/prisma";
 import { trackValidationEvent, validationEvent } from "@/lib/validation-events";
 
-const OWNER_MANAGED_MODULES: AppModule[] = [AppModule.SCHEDULER, AppModule.LOYALTY];
+const OWNER_MANAGED_MODULES: AppModule[] = [
+  AppModule.REVIEWS,
+  AppModule.SCHEDULER,
+  AppModule.LOYALTY,
+];
 
 export async function POST(
   request: Request,

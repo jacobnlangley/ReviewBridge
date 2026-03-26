@@ -4,11 +4,27 @@ import { PublicHeaderNav } from "@/components/navigation/public-header-nav";
 import { getEnabledModulesForBusiness } from "@/lib/module-subscriptions";
 import { getOwnerSession } from "@/lib/owner-session";
 
+type DashboardNavModule = "REVIEWS" | "SCHEDULER" | "LOYALTY";
+
 export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const ownerSession = await getOwnerSession();
   const enabledModules = ownerSession ? await getEnabledModulesForBusiness(ownerSession.businessId) : [];
+  const dashboardNavModules: DashboardNavModule[] = Array.from(
+    new Set(
+      enabledModules.flatMap((module) => {
+        if (module === "FEEDBACK") {
+          return ["REVIEWS"];
+        }
+
+        return module;
+      }),
+    ),
+  ).filter(
+    (module): module is DashboardNavModule =>
+      module === "REVIEWS" || module === "SCHEDULER" || module === "LOYALTY",
+  );
 
   return (
     <>
@@ -20,7 +36,7 @@ export default async function DashboardLayout({
           <PublicHeaderNav hasOwnerSession={Boolean(ownerSession)} />
         </div>
       </header>
-      {ownerSession ? <DashboardNav enabledModules={enabledModules} /> : null}
+      {ownerSession ? <DashboardNav enabledModules={dashboardNavModules} /> : null}
       {children}
     </>
   );

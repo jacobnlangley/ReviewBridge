@@ -1,17 +1,66 @@
 import Link from "next/link";
-import { AppModule, ModuleSubscriptionStatus } from "@prisma/client";
+import { AppModule, ModuleSubscriptionStatus, SubscriptionStatus } from "@prisma/client";
+import { redirect } from "next/navigation";
 import { ModuleSubscriptionForm } from "@/components/forms/module-subscription-form";
+import { RenewSubscriptionForm } from "@/components/forms/renew-subscription-form";
 import { Card } from "@/components/ui/card";
 import { getOwnerWorkspaceContextOrRedirect } from "@/lib/owner-workspace-context";
 import { prisma } from "@/lib/prisma";
+import { getDayDelta } from "@/lib/subscription-countdown";
+import { evaluateBusinessAccess } from "@/lib/subscription-access";
 
-const OWNER_MANAGED_MODULES: Array<Exclude<AppModule, "FEEDBACK" | "REVIEWS">> = [
+const OWNER_MANAGED_MODULES: Array<Exclude<AppModule, "FEEDBACK">> = [
+  AppModule.REVIEWS,
   AppModule.SCHEDULER,
   AppModule.LOYALTY,
 ];
 
+function formatDate(date: Date | null) {
+  if (!date) {
+    return "Not set";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function getStatusLabel(status: SubscriptionStatus) {
+  switch (status) {
+    case SubscriptionStatus.TRIAL_ACTIVE:
+      return "Trial";
+    case SubscriptionStatus.ACTIVE_PAID:
+      return "Paid";
+    case SubscriptionStatus.INACTIVE_EXPIRED:
+      return "Expired";
+    case SubscriptionStatus.INACTIVE_CANCELED:
+      return "Canceled";
+    default:
+      return "Unknown";
+  }
+}
+
 export default async function DashboardHomePage() {
   const workspace = await getOwnerWorkspaceContextOrRedirect();
+  const business = await prisma.business.findUnique({
+    where: { id: workspace.businessId },
+    select: {
+      id: true,
+      subscriptionStatus: true,
+      trialStartedAt: true,
+      trialEndsAt: true,
+      paidThrough: true,
+      autoRenewEnabled: true,
+      deactivatedAt: true,
+    },
+  });
+
+  if (!business) {
+    redirect("/dashboard/access");
+  }
+
   const subscriptions = await prisma.businessModuleSubscription.findMany({
     where: {
       businessId: workspace.businessId,
@@ -29,7 +78,14 @@ export default async function DashboardHomePage() {
   });
 
   const moduleSubscriptionsForForm = OWNER_MANAGED_MODULES.map((module) => {
-    const existing = subscriptions.find((subscription) => subscription.module === module);
+    const existing = subscriptions.find(
+      (subscription: {
+        module: AppModule;
+        status: ModuleSubscriptionStatus;
+        startedAt: Date | null;
+        endsAt: Date | null;
+      }) => subscription.module === module,
+    );
 
     if (existing) {
       return {
@@ -48,6 +104,24 @@ export default async function DashboardHomePage() {
     };
   });
 
+  const access = evaluateBusinessAccess({
+    subscriptionStatus: business.subscriptionStatus,
+    trialEndsAt: business.trialEndsAt,
+    paidThrough: business.paidThrough,
+    autoRenewEnabled: business.autoRenewEnabled,
+    deactivatedAt: business.deactivatedAt,
+  });
+
+  const isMonthlySubscriptionActive =
+    business.subscriptionStatus === SubscriptionStatus.ACTIVE_PAID && business.autoRenewEnabled;
+  const activeWindowEnd =
+    business.subscriptionStatus === SubscriptionStatus.ACTIVE_PAID
+      ? business.paidThrough
+      : business.trialEndsAt;
+  const dayDelta = getDayDelta(activeWindowEnd);
+  const daysRemaining = dayDelta === null ? null : Math.max(dayDelta, 0);
+  const daysSinceExpiry = dayDelta === null ? null : Math.abs(Math.min(dayDelta, 0));
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 md:py-14">
       <section className="grid gap-6 md:grid-cols-[1.05fr_0.95fr] md:items-start">
@@ -65,6 +139,43 @@ export default async function DashboardHomePage() {
             <p>
               <span className="font-medium text-slate-900">Slug:</span> {workspace.locationSlug}
             </p>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <p>
+              <span className="font-medium text-slate-900">Current status:</span>{" "}
+              {getStatusLabel(business.subscriptionStatus)}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Trial started:</span>{" "}
+              {formatDate(business.trialStartedAt)}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Trial ends:</span> {formatDate(business.trialEndsAt)}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Paid through:</span> {formatDate(business.paidThrough)}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Feedback form access:</span>{" "}
+              {access.isActive ? "Active" : "Inactive"}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Monthly subscription:</span>{" "}
+              {isMonthlySubscriptionActive ? "Active" : "Not active"}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Days remaining:</span>{" "}
+              {daysRemaining !== null
+                ? `${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
+                : "Not available"}
+            </p>
+            {!access.isActive && daysSinceExpiry !== null ? (
+              <p>
+                <span className="font-medium text-slate-900">Expired:</span> {daysSinceExpiry} day
+                {daysSinceExpiry === 1 ? "" : "s"} ago
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -87,15 +198,30 @@ export default async function DashboardHomePage() {
               Open loyalty builder
             </Link>
             <Link
-              href={`/manage/${workspace.locationSlug}`}
+              href="/dashboard/reviews"
               className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-100"
             >
-              Open owner manage
+              Open reviews workspace
             </Link>
           </div>
         </Card>
 
         <Card className="space-y-3">
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <h2 className="text-lg font-semibold text-slate-900">Renewal details</h2>
+            <p className="text-sm text-slate-700">
+              Starting a monthly subscription activates your feedback form right away.
+            </p>
+            <p className="text-sm text-slate-700">Monthly subscriptions stay active until you cancel.</p>
+            <p className="text-sm text-slate-700">
+              Use the same owner email you signed up with to start or cancel your monthly subscription.
+            </p>
+            <RenewSubscriptionForm
+              businessId={workspace.businessId}
+              isMonthlySubscriptionActive={isMonthlySubscriptionActive}
+            />
+          </div>
+
           <h2 className="text-lg font-semibold text-slate-900">Module subscriptions</h2>
           <p className="text-sm text-slate-700">
             Turn on Last-Minute Scheduler and Loyalty Builder as your workflow expands.

@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { AppModule } from "@prisma/client";
+
+type DashboardModule = "FEEDBACK" | "REVIEWS" | "SCHEDULER" | "LOYALTY";
 
 type OwnerWorkspaceNavProps = {
   locationSlug: string;
-  enabledModules: AppModule[];
+  enabledModules: DashboardModule[];
 };
 
-const MODULE_LABELS: Record<AppModule, string> = {
+const MODULE_LABELS: Record<DashboardModule, string> = {
   FEEDBACK: "Reviews",
   REVIEWS: "Reviews",
   SCHEDULER: "Last-Minute Scheduler",
@@ -18,7 +19,7 @@ const MODULE_LABELS: Record<AppModule, string> = {
 
 export function OwnerWorkspaceNav({ locationSlug, enabledModules }: OwnerWorkspaceNavProps) {
   const pathname = usePathname();
-  const feedbackRoutes = ["/dashboard/reviews", "/dashboard/reviews/qr", `/manage/${locationSlug}`, `/feedback/${locationSlug}`];
+  const feedbackRoutes = ["/dashboard/reviews", "/dashboard/reviews/qr", `/feedback/${locationSlug}`];
   const moduleTabs = enabledModules.filter((module) => module !== "REVIEWS").map((module) => {
     if (module === "FEEDBACK") {
       return {

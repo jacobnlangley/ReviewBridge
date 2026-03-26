@@ -2,21 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { AppModule } from "@prisma/client";
+
+type DashboardModule = "REVIEWS" | "SCHEDULER" | "LOYALTY";
 
 type DashboardNavProps = {
-  enabledModules: AppModule[];
+  enabledModules: DashboardModule[];
 };
 
-const MODULE_LABELS: Record<AppModule, string> = {
-  FEEDBACK: "Reviews",
+const MODULE_LABELS: Record<DashboardModule, string> = {
   REVIEWS: "Reviews",
   SCHEDULER: "Last-Minute Scheduler",
   LOYALTY: "Loyalty Builder",
 };
 
-const MODULE_PATHS: Record<AppModule, string> = {
-  FEEDBACK: "/dashboard/reviews",
+const MODULE_PATHS: Record<DashboardModule, string> = {
   REVIEWS: "/dashboard/reviews",
   SCHEDULER: "/dashboard/scheduler",
   LOYALTY: "/dashboard/loyalty",
@@ -28,7 +27,7 @@ export function DashboardNav({ enabledModules }: DashboardNavProps) {
   return (
     <div className="border-b border-slate-200 bg-slate-100/80">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-2.5 text-sm text-slate-700">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Dashboard</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Owner Dashboard</p>
         <nav className="flex items-center gap-3">
           <Link
             href="/dashboard"
@@ -39,12 +38,12 @@ export function DashboardNav({ enabledModules }: DashboardNavProps) {
                 : "hover:text-slate-900"
             }
           >
-            Home
+            Dashboard
           </Link>
 
-          {enabledModules.filter((module) => module !== "REVIEWS").map((module) => {
+          {enabledModules.map((module) => {
             const href = MODULE_PATHS[module];
-            const isActive = module === "FEEDBACK" ? pathname.startsWith("/dashboard/reviews") : pathname === href;
+            const isActive = module === "REVIEWS" ? pathname.startsWith("/dashboard/reviews") : pathname === href;
 
             return (
               <Link

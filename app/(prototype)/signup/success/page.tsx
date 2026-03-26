@@ -73,8 +73,8 @@ export default async function SignupSuccessPage({ searchParams }: SignupSuccessP
   const publicFeedbackUrl = `${getAppUrl()}/feedback/${location.slug}`;
   const manageToken = providedManageToken || createManageToken({ businessId: location.business.id });
   const manageHref = manageToken
-    ? `/manage/${location.slug}?token=${encodeURIComponent(manageToken)}`
-    : `/manage/${location.slug}`;
+    ? `/dashboard/reviews?slug=${encodeURIComponent(location.slug)}&token=${encodeURIComponent(manageToken)}`
+    : `/dashboard/reviews?slug=${encodeURIComponent(location.slug)}`;
   const dayDelta = getDayDelta(location.business.trialEndsAt);
   const daysRemaining = dayDelta === null ? null : Math.max(dayDelta, 0);
 

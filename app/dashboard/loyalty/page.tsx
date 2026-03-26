@@ -28,10 +28,10 @@ export default async function DashboardLoyaltyPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Loyalty Builder is not active yet</h1>
             <Link
-              href={`/manage/${workspace.locationSlug}`}
+              href="/dashboard/reviews"
               className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
             >
-              Back to Manage
+              Back to Reviews
             </Link>
           </div>
           <p>
@@ -42,8 +42,8 @@ export default async function DashboardLoyaltyPage() {
             </span>
           </p>
           <p className="text-sm text-slate-700">Activate this module to run repeat-visit offers and loyalty campaigns.</p>
-          <p className="text-sm text-slate-600">Activated from Manage appears here immediately after enabling.</p>
-          <Link href={`/manage/${workspace.locationSlug}`} className="text-sm font-medium text-slate-900 underline">
+          <p className="text-sm text-slate-600">Activated from Reviews workspace appears here immediately after enabling.</p>
+          <Link href="/dashboard/reviews" className="text-sm font-medium text-slate-900 underline">
             Open subscription settings
           </Link>
         </Card>
@@ -58,17 +58,17 @@ export default async function DashboardLoyaltyPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Loyalty Builder workspace</h1>
           <Link
-            href={`/manage/${workspace.locationSlug}`}
+            href="/dashboard/reviews"
             className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
           >
-            Back to Manage
+            Back to Reviews
           </Link>
         </div>
         <p>
           <span
             className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_CLASSES[subscription.status]}`}
           >
-            Status: {STATUS_LABELS[subscription.status]} (Activated from Manage)
+            Status: {STATUS_LABELS[subscription.status]} (Activated from Reviews workspace)
           </span>
         </p>
         <p className="text-sm text-slate-700">Placeholder: rewards catalog, active members, and redemptions.</p>
