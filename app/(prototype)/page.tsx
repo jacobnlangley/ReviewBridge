@@ -13,7 +13,7 @@ export default function HomePage() {
             Capture private feedback before unhappy customers post public reviews.
           </h1>
           <p className="text-slate-700">
-            ReviewBridge gives service businesses a fast customer feedback checkpoint. Happy
+            AttuneBridge gives service businesses a fast customer feedback checkpoint. Happy
             customers are invited to leave a public review, while unhappy customers are routed into
             a private feedback path first.
           </p>
@@ -59,7 +59,7 @@ export default function HomePage() {
           </h2>
           <p className="text-slate-700">
             Most small businesses only hear about bad experiences when a public review appears.
-            ReviewBridge creates a short, private moment for dialogue before that happens so teams
+            AttuneBridge creates a short, private moment for dialogue before that happens so teams
             can recover trust and improve service.
           </p>
           <div>

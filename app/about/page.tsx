@@ -63,7 +63,7 @@ export default function AboutPage() {
         </p>
 
         <p>
-          I&apos;m currently building a simple feedback tool called <strong>ReviewBridge</strong>
+          I&apos;m currently building a simple feedback tool called <strong>AttuneBridge</strong>
           designed to help businesses hear from unhappy customers before those experiences turn
           into negative public reviews.
         </p>

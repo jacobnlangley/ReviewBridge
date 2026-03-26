@@ -247,7 +247,7 @@ export default async function DashboardReviewsPage({ searchParams }: DashboardRe
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <h3 className="text-sm font-semibold text-slate-900">Owner feature request</h3>
             <p className="mb-2 text-sm text-slate-700">
-              Tell us what would make ReviewBridge more useful in your day-to-day workflow.
+              Tell us what would make AttuneBridge more useful in your day-to-day workflow.
             </p>
             <OwnerFeatureRequestForm
               businessId={location.business.id}

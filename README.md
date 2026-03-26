@@ -1,10 +1,10 @@
-# ReviewBridge
+# AttuneBridge
 
-ReviewBridge is a lean micro-SaaS prototype for small service businesses to capture private customer feedback before negative public reviews happen.
+AttuneBridge is a lean micro-SaaS prototype for small service businesses to capture private customer feedback before negative public reviews happen.
 
 ## Overview
 
-After a service interaction, a business shares a ReviewBridge link with a customer. The customer selects one of three outcomes:
+After a service interaction, a business shares an AttuneBridge link with a customer. The customer selects one of three outcomes:
 
 - Great
 - Okay
@@ -18,7 +18,7 @@ Small service businesses often discover unhappy customers too late, after a publ
 
 ## Solution Summary
 
-ReviewBridge creates a lightweight feedback checkpoint between service completion and public review behavior. It enables early dialogue, helps recover at-risk experiences, and protects reputation without complex workflows.
+AttuneBridge creates a lightweight feedback checkpoint between service completion and public review behavior. It enables early dialogue, helps recover at-risk experiences, and protects reputation without complex workflows.
 
 ## Target Customers
 

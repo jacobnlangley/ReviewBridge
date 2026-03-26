@@ -31,7 +31,7 @@ export default async function DashboardLayout({
       <header className="border-b border-slate-200 bg-white/95">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/" className="text-sm font-semibold tracking-tight text-slate-900">
-            ReviewBridge
+            AttuneBridge
           </Link>
           <PublicHeaderNav hasOwnerSession={Boolean(ownerSession)} />
         </div>

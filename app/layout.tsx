@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ReviewBridge",
+  title: "AttuneBridge",
   description: "Capture private feedback before public reviews.",
 };
 
