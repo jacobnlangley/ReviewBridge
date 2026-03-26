@@ -101,16 +101,19 @@ Copy `.env.example` to `.env` and set:
 - `DATABASE_URL`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
+- `MANAGE_TOKEN_SECRET` (required in production for secure owner manage links)
+- `OWNER_SESSION_SECRET` (optional; falls back to `MANAGE_TOKEN_SECRET`)
 - Optional: `NEXT_PUBLIC_APP_URL`
+- Optional (SMS alerts): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_PHONE`
 
 ### Setup
 
 ```bash
-npm install
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
-npm run dev
+pnpm install
+pnpm run prisma:generate
+pnpm run prisma:migrate
+pnpm run prisma:seed
+pnpm run dev
 ```
 
 Demo route after seeding:
