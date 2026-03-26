@@ -1,7 +1,14 @@
-import { FollowUpPreference, Sentiment } from "@prisma/client";
+import {
+  FollowUpPreference,
+  FeedbackStatus,
+  NotificationChannel,
+  Sentiment,
+} from "@prisma/client";
 import { NextResponse } from "next/server";
-import { sendFeedbackNotification } from "@/lib/email";
+import { sendFeedbackAlerts } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
+import { evaluateBusinessAccess } from "@/lib/subscription-access";
+import { trackValidationEvent, validationEvent } from "@/lib/validation-events";
 
 type FeedbackRequestBody = {
   slug?: unknown;
@@ -26,6 +33,122 @@ const followUpPreferenceMap: Record<"text" | "call" | "email", FollowUpPreferenc
   call: FollowUpPreference.CALL,
   email: FollowUpPreference.EMAIL,
 };
+
+const feedbackStatusMap: Record<string, FeedbackStatus> = {
+  NEW: FeedbackStatus.NEW,
+  IN_PROGRESS: FeedbackStatus.IN_PROGRESS,
+  RESOLVED: FeedbackStatus.RESOLVED,
+};
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const businessId = searchParams.get("businessId")?.trim() ?? "";
+  const statusRaw = searchParams.get("status")?.trim() ?? "";
+  const sentimentRaw = searchParams.get("sentiment")?.trim() ?? "";
+  const cursor = searchParams.get("cursor")?.trim() ?? "";
+  const limitRaw = Number(searchParams.get("limit") ?? "25");
+  const take = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 100) : 25;
+
+  if (!businessId) {
+    return NextResponse.json({ error: "businessId is required." }, { status: 400 });
+  }
+
+  const where: {
+    location: { businessId: string };
+    status?: FeedbackStatus;
+    sentiment?: Sentiment;
+  } = {
+    location: {
+      businessId,
+    },
+  };
+
+  if (statusRaw) {
+    if (!(statusRaw in feedbackStatusMap)) {
+      return NextResponse.json({ error: "Invalid feedback status." }, { status: 400 });
+    }
+
+    where.status = feedbackStatusMap[statusRaw];
+  }
+
+  if (sentimentRaw) {
+    if (!(sentimentRaw in Sentiment)) {
+      return NextResponse.json({ error: "Invalid sentiment filter." }, { status: 400 });
+    }
+
+    where.sentiment = Sentiment[sentimentRaw as keyof typeof Sentiment];
+  }
+
+  const feedback = await prisma.feedback.findMany({
+    where,
+    include: {
+      location: {
+        select: {
+          id: true,
+          name: true,
+          business: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      notificationEvents: {
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    take,
+  });
+
+  const items = feedback.map((entry) => {
+    const latestEmail = entry.notificationEvents.find(
+      (event) => event.channel === NotificationChannel.EMAIL,
+    );
+    const latestSms = entry.notificationEvents.find(
+      (event) => event.channel === NotificationChannel.SMS,
+    );
+
+    return {
+      id: entry.id,
+      sentiment: entry.sentiment,
+      status: entry.status,
+      message: entry.message,
+      createdAt: entry.createdAt,
+      firstRespondedAt: entry.firstRespondedAt,
+      resolvedAt: entry.resolvedAt,
+      location: {
+        id: entry.location.id,
+        name: entry.location.name,
+        business: {
+          id: entry.location.business.id,
+          name: entry.location.business.name,
+        },
+      },
+      customer: {
+        name: entry.customerName,
+        email: entry.customerEmail,
+        phone: entry.phone,
+        wantsFollowUp: entry.wantsFollowUp,
+        followUpPreference: entry.followUpPreference,
+      },
+      notifications: {
+        latestEmailStatus: latestEmail?.status ?? null,
+        latestEmailReason: latestEmail?.reason ?? null,
+        latestSmsStatus: latestSms?.status ?? null,
+        latestSmsReason: latestSms?.reason ?? null,
+      },
+    };
+  });
+
+  return NextResponse.json({
+    items,
+    nextCursor: feedback.length === take ? feedback[feedback.length - 1]?.id ?? null : null,
+  });
+}
 
 export async function POST(request: Request) {
   let body: FeedbackRequestBody;
@@ -62,7 +185,6 @@ export async function POST(request: Request) {
   }
 
   let followUpPreference: FollowUpPreference | null = null;
-  let followUpPreferenceForEmail: "text" | "call" | "email" | null = null;
 
   if (wantsFollowUp) {
     if (!(followUpPreferenceRaw in followUpPreferenceMap)) {
@@ -74,7 +196,6 @@ export async function POST(request: Request) {
 
     followUpPreference =
       followUpPreferenceMap[followUpPreferenceRaw as "text" | "call" | "email"];
-    followUpPreferenceForEmail = followUpPreferenceRaw as "text" | "call" | "email";
 
     if (
       (followUpPreference === FollowUpPreference.TEXT ||
@@ -97,14 +218,46 @@ export async function POST(request: Request) {
 
   const location = await prisma.location.findFirst({
     where: slug ? { slug } : { id: locationId },
-    include: { business: true },
+    include: {
+      business: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          subscriptionStatus: true,
+          trialEndsAt: true,
+          paidThrough: true,
+          autoRenewEnabled: true,
+          deactivatedAt: true,
+          instantEmailNeutral: true,
+          instantEmailNegative: true,
+          smsNegativeEnabled: true,
+          alertPhone: true,
+        },
+      },
+    },
   });
 
   if (!location) {
     return NextResponse.json({ error: "Location not found." }, { status: 404 });
   }
 
-  await prisma.feedback.create({
+  const access = evaluateBusinessAccess({
+    subscriptionStatus: location.business.subscriptionStatus,
+    trialEndsAt: location.business.trialEndsAt,
+    paidThrough: location.business.paidThrough,
+    autoRenewEnabled: location.business.autoRenewEnabled,
+    deactivatedAt: location.business.deactivatedAt,
+  });
+
+  if (!access.isActive) {
+    return NextResponse.json(
+      { error: "This feedback form is currently inactive." },
+      { status: 403 },
+    );
+  }
+
+  const feedback = await prisma.feedback.create({
     data: {
       locationId: location.id,
       sentiment,
@@ -117,19 +270,37 @@ export async function POST(request: Request) {
     },
   });
 
-  if (sentiment === Sentiment.NEUTRAL || sentiment === Sentiment.NEGATIVE) {
-    await sendFeedbackNotification({
-      businessEmail: location.business.email,
-      locationName: location.name,
-      sentiment: sentimentRaw as "positive" | "neutral" | "negative",
+  await trackValidationEvent({
+    event: validationEvent.feedbackSubmitted,
+    businessId: location.business.id,
+    locationId: location.id,
+    metadata: {
+      sentiment,
+      wantsFollowUp,
+      hasMessage: Boolean(message),
+    },
+  });
+
+  let alerts: { email: "sent" | "failed" | "skipped"; sms: "sent" | "failed" | "skipped" } = {
+    email: "failed",
+    sms: "failed",
+  };
+
+  try {
+    alerts = await sendFeedbackAlerts({
+      feedbackId: feedback.id,
+      sentiment,
       message: message || null,
       wantsFollowUp,
-      followUpPreference: followUpPreferenceForEmail,
+      followUpPreference,
       phone: wantsFollowUp ? phone || null : null,
       customerName: customerName || null,
       customerEmail: customerEmail || null,
+      location,
     });
+  } catch {
+    alerts = { email: "failed", sms: "failed" };
   }
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ ok: true, feedbackId: feedback.id, alerts }, { status: 201 });
 }

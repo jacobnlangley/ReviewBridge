@@ -15,6 +15,8 @@ type NotificationInput = {
 type NotificationResult = {
   sent: boolean;
   skipped: boolean;
+  providerMessageId: string | null;
+  errorMessage: string | null;
 };
 
 export async function sendFeedbackNotification(
@@ -27,7 +29,12 @@ export async function sendFeedbackNotification(
     console.warn(
       "Feedback notification skipped: RESEND_API_KEY or RESEND_FROM_EMAIL is missing.",
     );
-    return { sent: false, skipped: true };
+    return {
+      sent: false,
+      skipped: true,
+      providerMessageId: null,
+      errorMessage: "Email provider is not configured.",
+    };
   }
 
   const resend = new Resend(apiKey);
@@ -44,7 +51,7 @@ export async function sendFeedbackNotification(
   ].join("\n");
 
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: fromEmail,
       to: input.businessEmail,
       subject: `New private feedback (${input.sentiment})`,
@@ -52,9 +59,19 @@ export async function sendFeedbackNotification(
       html: `<p>You received new private feedback.</p><pre>${details}</pre>`,
     });
 
-    return { sent: true, skipped: false };
+    return {
+      sent: true,
+      skipped: false,
+      providerMessageId: result.data?.id ?? null,
+      errorMessage: null,
+    };
   } catch (error) {
     console.warn("Feedback notification failed.", error);
-    return { sent: false, skipped: true };
+    return {
+      sent: false,
+      skipped: false,
+      providerMessageId: null,
+      errorMessage: "Email provider request failed.",
+    };
   }
 }

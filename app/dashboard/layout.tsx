@@ -1,16 +1,14 @@
 import Link from "next/link";
-import { OwnerWorkspaceNav } from "@/components/navigation/owner-workspace-nav";
-import { getEnabledModulesForBusiness } from "@/lib/module-subscriptions";
+import { DashboardNav } from "@/components/navigation/dashboard-nav";
 import { PublicHeaderNav } from "@/components/navigation/public-header-nav";
+import { getEnabledModulesForBusiness } from "@/lib/module-subscriptions";
 import { getOwnerSession } from "@/lib/owner-session";
 
-export default async function PrototypeLayout({
+export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const ownerSession = await getOwnerSession();
-  const enabledModules = ownerSession
-    ? await getEnabledModulesForBusiness(ownerSession.businessId)
-    : [];
+  const enabledModules = ownerSession ? await getEnabledModulesForBusiness(ownerSession.businessId) : [];
 
   return (
     <>
@@ -22,9 +20,7 @@ export default async function PrototypeLayout({
           <PublicHeaderNav hasOwnerSession={Boolean(ownerSession)} />
         </div>
       </header>
-      {ownerSession ? (
-        <OwnerWorkspaceNav locationSlug={ownerSession.locationSlug} enabledModules={enabledModules} />
-      ) : null}
+      {ownerSession ? <DashboardNav enabledModules={enabledModules} /> : null}
       {children}
     </>
   );

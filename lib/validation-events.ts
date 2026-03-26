@@ -1,0 +1,39 @@
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+
+export const validationEvent = {
+  signupStarted: "signup_started",
+  signupCompleted: "signup_completed",
+  qrViewed: "qr_viewed",
+  manageViewed: "manage_viewed",
+  feedbackSubmitted: "feedback_submitted",
+  subscriptionStarted: "subscription_started",
+  subscriptionCanceled: "subscription_canceled",
+  moduleSubscriptionUpdated: "module_subscription_updated",
+  ownerFeatureRequestSubmitted: "owner_feature_request_submitted",
+  ownerAccessLinkIssued: "owner_access_link_issued",
+} as const;
+
+type ValidationEventName = (typeof validationEvent)[keyof typeof validationEvent];
+
+type TrackValidationEventInput = {
+  event: ValidationEventName;
+  businessId?: string | null;
+  locationId?: string | null;
+  metadata?: Prisma.InputJsonValue;
+};
+
+export async function trackValidationEvent(input: TrackValidationEventInput) {
+  try {
+    await prisma.validationEvent.create({
+      data: {
+        event: input.event,
+        businessId: input.businessId ?? null,
+        locationId: input.locationId ?? null,
+        metadata: input.metadata ?? undefined,
+      },
+    });
+  } catch {
+    return;
+  }
+}

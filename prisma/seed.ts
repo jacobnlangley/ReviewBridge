@@ -1,14 +1,45 @@
-import { FollowUpPreference, PrismaClient, Sentiment } from "@prisma/client";
+import {
+  AppModule,
+  FollowUpPreference,
+  ModuleSubscriptionStatus,
+  PrismaClient,
+  Sentiment,
+  SubscriptionStatus,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const now = new Date();
+  const trialEndsAt = new Date(now);
+  trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
   const business = await prisma.business.upsert({
     where: { email: "owner@democoffee.com" },
-    update: { name: "Demo Coffee Co" },
+    update: {
+      name: "Demo Coffee Co",
+      subscriptionStatus: SubscriptionStatus.TRIAL_ACTIVE,
+      trialStartedAt: now,
+      trialEndsAt,
+      paidThrough: null,
+      autoRenewEnabled: false,
+      deactivatedAt: null,
+      instantEmailNeutral: true,
+      instantEmailNegative: true,
+      smsNegativeEnabled: false,
+    },
     create: {
       name: "Demo Coffee Co",
       email: "owner@democoffee.com",
+      subscriptionStatus: SubscriptionStatus.TRIAL_ACTIVE,
+      trialStartedAt: now,
+      trialEndsAt,
+      paidThrough: null,
+      autoRenewEnabled: false,
+      deactivatedAt: null,
+      instantEmailNeutral: true,
+      instantEmailNegative: true,
+      smsNegativeEnabled: false,
     },
   });
 
@@ -30,6 +61,31 @@ async function main() {
       yelpReviewLink: "https://www.yelp.com/writeareview/biz/demo-coffee",
     },
   });
+
+  const moduleSeeds = [AppModule.SCHEDULER, AppModule.LOYALTY];
+
+  for (const module of moduleSeeds) {
+    await prisma.businessModuleSubscription.upsert({
+      where: {
+        businessId_module: {
+          businessId: business.id,
+          module,
+        },
+      },
+      update: {
+        status: ModuleSubscriptionStatus.TRIAL,
+        startedAt: now,
+        endsAt: trialEndsAt,
+      },
+      create: {
+        businessId: business.id,
+        module,
+        status: ModuleSubscriptionStatus.TRIAL,
+        startedAt: now,
+        endsAt: trialEndsAt,
+      },
+    });
+  }
 
   await prisma.feedback.deleteMany({ where: { locationId: location.id } });
 

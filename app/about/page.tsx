@@ -28,7 +28,7 @@ export default function AboutPage() {
               className="h-64 w-full object-cover"
             />
             <figcaption className="px-3 py-2 text-xs text-slate-500">
-              Time outside keeps me grounded and focused on practical work.
+              Time outside keeps me grounded and renews my energy for building stuff.
             </figcaption>
           </figure>
           <figure className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -48,6 +48,18 @@ export default function AboutPage() {
         <p>
           Today I work as a software developer, but I&apos;ve remained passionate about building
           practical tools that help small service businesses solve everyday problems.
+        </p>
+
+        <p>
+          I&apos;ve also spent time living in communities all over the country - sometimes briefly,
+          sometimes for longer stretches - including Atlanta, Nashville, Louisville, Santa Fe,
+          Sedona, Los Angeles, Ojai, Asheville, Myrtle Beach, Buffalo, Hudson and Beacon (NY),
+          Portland (ME), Charlotte, Bethlehem (PA), Chicago, Whitefish (MT), and Brewster (WA).
+        </p>
+
+        <p>
+          Seeing both large and small communities up close has shaped how I think about local
+          trust, service, and reputation.
         </p>
 
         <p>

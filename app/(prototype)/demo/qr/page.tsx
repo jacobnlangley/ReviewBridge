@@ -1,28 +1,37 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { QrCodePreview } from "@/components/ui/qr-code-preview";
+import { getAppUrl } from "@/lib/app-url";
+import { createManageToken } from "@/lib/manage-token";
 import { prisma } from "@/lib/prisma";
+import { trackValidationEvent, validationEvent } from "@/lib/validation-events";
 
 export const dynamic = "force-dynamic";
-
-function getAppUrl() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return appUrl && appUrl.length > 0 ? appUrl.replace(/\/$/, "") : "http://localhost:3000";
-}
 
 export default async function DemoQrPage() {
   let location:
     | {
+        id: string;
         slug: string;
         name: string;
-        business: { name: string };
+        business: { id: string; name: string };
       }
     | null = null;
 
   try {
     location = await prisma.location.findUnique({
       where: { slug: "demo-coffee-downtown" },
-      include: { business: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        business: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
   } catch {
     return (
@@ -55,6 +64,19 @@ export default async function DemoQrPage() {
   }
 
   const publicFeedbackUrl = `${getAppUrl()}/feedback/${location.slug}`;
+  const manageToken = createManageToken({ businessId: location.business.id });
+  const manageHref = manageToken
+    ? `/manage/${location.slug}?token=${encodeURIComponent(manageToken)}`
+    : `/manage/${location.slug}`;
+
+  await trackValidationEvent({
+    event: validationEvent.qrViewed,
+    businessId: location.business.id,
+    locationId: location.id,
+    metadata: {
+      source: "demo_qr_page",
+    },
+  });
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 md:py-14">
@@ -85,6 +107,12 @@ export default async function DemoQrPage() {
             </p>
             <p className="text-xs text-slate-500">
               Use this on a receipt, sign, or table tent.
+            </p>
+            <p className="text-xs text-slate-500">
+              Business owner?{" "}
+              <Link href={manageHref} className="font-medium text-slate-700 underline">
+                Manage your trial
+              </Link>
             </p>
           </div>
 

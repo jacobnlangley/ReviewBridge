@@ -19,8 +19,14 @@ export default function HomePage() {
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Link
-              href="/feedback/demo-coffee-downtown"
+              href="/signup"
               className="inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Start free trial
+            </Link>
+            <Link
+              href="/feedback/demo-coffee-downtown"
+              className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-100"
             >
               Try the demo
             </Link>

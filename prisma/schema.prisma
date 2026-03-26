@@ -8,45 +8,133 @@ datasource db {
 }
 
 model Business {
-  id        String     @id @default(cuid())
-  name      String
-  email     String     @unique
-  locations Location[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id                   String                       @id @default(cuid())
+  name                 String
+  email                String                       @unique
+  subscriptionStatus   SubscriptionStatus           @default(TRIAL_ACTIVE)
+  trialStartedAt       DateTime?
+  trialEndsAt          DateTime?
+  paidThrough          DateTime?
+  autoRenewEnabled     Boolean                      @default(false)
+  deactivatedAt        DateTime?
+  instantEmailNeutral  Boolean                      @default(true)
+  instantEmailNegative Boolean                      @default(true)
+  smsNegativeEnabled   Boolean                      @default(false)
+  alertPhone           String?
+  quietHoursStart      String?
+  quietHoursEnd        String?
+  locations            Location[]
+  notificationEvents   NotificationEvent[]
+  featureRequests      OwnerFeatureRequest[]
+  validationEvents     ValidationEvent[]
+  moduleSubscriptions  BusinessModuleSubscription[]
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+
+  @@index([subscriptionStatus])
+  @@index([trialEndsAt])
+  @@index([paidThrough])
+  @@index([autoRenewEnabled])
+}
+
+model BusinessModuleSubscription {
+  id         String                   @id @default(cuid())
+  businessId String
+  module     AppModule
+  status     ModuleSubscriptionStatus @default(INACTIVE)
+  startedAt  DateTime?
+  endsAt     DateTime?
+  business   Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  @@unique([businessId, module])
+  @@index([businessId, status])
+  @@index([module, status])
+}
+
+model OwnerFeatureRequest {
+  id         String   @id @default(cuid())
+  businessId String
+  ownerEmail String
+  details    String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, createdAt])
+  @@index([ownerEmail, createdAt])
 }
 
 model Location {
-  id               String     @id @default(cuid())
+  id               String            @id @default(cuid())
   businessId       String
   name             String
-  slug             String     @unique
+  slug             String            @unique
   reviewLink       String?
   googleReviewLink String?
   yelpReviewLink   String?
-  business         Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   feedback         Feedback[]
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  validationEvents ValidationEvent[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([businessId])
 }
 
+model ValidationEvent {
+  id         String    @id @default(cuid())
+  event      String
+  businessId String?
+  locationId String?
+  metadata   Json?
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+
+  @@index([event, createdAt])
+  @@index([businessId, createdAt])
+  @@index([locationId, createdAt])
+}
+
 model Feedback {
-  id            String    @id @default(cuid())
-  locationId    String
-  sentiment     Sentiment
-  message       String?
-  wantsFollowUp Boolean   @default(false)
+  id                 String              @id @default(cuid())
+  locationId         String
+  sentiment          Sentiment
+  message            String?
+  wantsFollowUp      Boolean             @default(false)
   followUpPreference FollowUpPreference?
-  phone         String?
-  customerEmail String?
-  customerName  String?
-  location      Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
+  phone              String?
+  customerEmail      String?
+  customerName       String?
+  status             FeedbackStatus      @default(NEW)
+  firstViewedAt      DateTime?
+  firstRespondedAt   DateTime?
+  resolvedAt         DateTime?
+  internalNotes      String?
+  location           Location            @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  notificationEvents NotificationEvent[]
+  createdAt          DateTime            @default(now())
 
   @@index([locationId])
   @@index([createdAt])
+}
+
+model NotificationEvent {
+  id                String              @id @default(cuid())
+  feedbackId        String
+  businessId        String
+  channel           NotificationChannel
+  status            NotificationStatus
+  reason            String?
+  providerMessageId String?
+  errorMessage      String?
+  feedback          Feedback            @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  business          Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt         DateTime            @default(now())
+
+  @@index([feedbackId, createdAt])
+  @@index([businessId, createdAt])
 }
 
 enum Sentiment {
@@ -59,4 +147,41 @@ enum FollowUpPreference {
   TEXT
   CALL
   EMAIL
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum AppModule {
+  FEEDBACK
+  REVIEWS
+  SCHEDULER
+  LOYALTY
+}
+
+enum ModuleSubscriptionStatus {
+  ACTIVE
+  TRIAL
+  INACTIVE
+}
+
+enum SubscriptionStatus {
+  TRIAL_ACTIVE
+  ACTIVE_PAID
+  INACTIVE_EXPIRED
+  INACTIVE_CANCELED
 }
