@@ -1,0 +1,76 @@
+name: Keep Dev to Main PR Open
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dev-to-main-pr
+  cancel-in-progress: true
+
+jobs:
+  ensure-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or reuse dev -> main PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const base = 'main';
+            const head = 'dev';
+
+            const compare = await github.rest.repos.compareCommitsWithBasehead({
+              owner,
+              repo,
+              basehead: `${base}...${head}`,
+            });
+
+            if (compare.data.ahead_by === 0) {
+              core.info('No new commits in dev ahead of main; nothing to open.');
+              return;
+            }
+
+            const existing = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              base,
+              head: `${owner}:${head}`,
+              per_page: 1,
+            });
+
+            if (existing.data.length > 0) {
+              core.info(`Existing release PR found: #${existing.data[0].number}`);
+              return;
+            }
+
+            const title = 'chore(release): promote dev to main';
+            const body = [
+              '## Summary',
+              '- auto-opened to keep release drift visible between `dev` and `main`',
+              '- review commit list and checks before marking ready and merging',
+              '',
+              '## Notes',
+              '- this PR is created by `.github/workflows/dev-to-main-pr.yml`',
+              '- merge this PR with **Create a merge commit** (do not squash) to keep `dev` and `main` history aligned',
+            ].join('\n');
+
+            const created = await github.rest.pulls.create({
+              owner,
+              repo,
+              title,
+              head,
+              base,
+              body,
+              draft: true,
+            });
+
+            core.info(`Created release PR #${created.data.number}`);

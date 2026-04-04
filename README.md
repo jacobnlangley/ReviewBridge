@@ -96,7 +96,7 @@ Secondary success signal:
 
 ### Environment
 
-Copy `.env.example` to `.env` and set:
+Copy `.env.example` to `.env.local` and set:
 
 - `DATABASE_URL`
 - `RESEND_API_KEY`
@@ -107,6 +107,37 @@ Copy `.env.example` to `.env` and set:
 - Optional (loyalty booking fallback): `LOYALTY_DEFAULT_BOOKING_LINK`
 - Required for scheduled loyalty processing: `CRON_SECRET`
 - Optional (SMS alerts): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_PHONE`
+
+### Environment value source checklist
+
+- `DATABASE_URL`: Supabase project settings -> Database -> Connection string (Prisma format).
+- `RESEND_API_KEY`: Resend dashboard -> API Keys.
+- `RESEND_FROM_EMAIL`: verified sender/domain in Resend (for example `hello@yourdomain.com`).
+- `MANAGE_TOKEN_SECRET`: app secret; generate a random 32+ byte value.
+- `OWNER_SESSION_SECRET`: app secret; generate a random 32+ byte value (or omit to fall back to `MANAGE_TOKEN_SECRET`).
+- `CRON_SECRET`: shared secret used by cron callers and `/api/cron/loyalty/process`.
+- `NEXT_PUBLIC_APP_URL`: base URL for current environment (`http://localhost:3000`, dev domain, or production domain).
+- `LOYALTY_DEFAULT_BOOKING_LINK`: optional fallback booking URL for loyalty messages.
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_PHONE`: Twilio Console values (only needed if SMS alerts are enabled).
+
+To generate local secrets quickly:
+
+```bash
+node -e "const c=require('crypto'); console.log('MANAGE_TOKEN_SECRET='+c.randomBytes(32).toString('hex')); console.log('OWNER_SESSION_SECRET='+c.randomBytes(32).toString('hex')); console.log('CRON_SECRET='+c.randomBytes(32).toString('hex'));"
+```
+
+Env sync commands:
+
+- `pnpm env:check`: verify required keys exist in local and Vercel profile files.
+- `pnpm env:sync`: add missing keys from `.env.example` with blank values.
+- `pnpm env:sync:all`: add missing keys across local, local overrides, and Vercel profile files.
+- `pnpm env:set -- --key MY_VAR --value my-value --profiles vercel-development,vercel-production`: set one key across selected profiles.
+- `pnpm env:push`: copy non-empty values from `.env.local` into both Vercel profile files (advanced).
+- `pnpm env:vercel:sync-keys`: sync key structure for both Vercel profile files, then validate.
+- `pnpm env:vercel:push-dev`: copy non-empty values from `.env.development.local` into `.env.vercel.development`.
+- `pnpm env:vercel:push-prod`: copy non-empty values from `.env.production.local` into `.env.vercel.production`.
+
+`pnpm env:push` skips empty source values by default so blank local values do not overwrite populated Vercel profile files.
 
 ### Scheduled loyalty processing
 
@@ -140,6 +171,23 @@ Sample crontab (every 5 minutes):
 */5 * * * * APP_BASE_URL="https://your-domain.com" CRON_SECRET="your-shared-secret" LIMIT_PER_BUSINESS="25" /path/to/repo/scripts/cron/loyalty-process.sh >> /var/log/attunebridge-loyalty-cron.log 2>&1
 ```
 
+### Clone production data into development database
+
+Use this when you need to refresh the Supabase dev database from production.
+
+```bash
+PROD_DATABASE_URL='postgresql://...prod-direct-url...' \
+DEV_DATABASE_URL='postgresql://...dev-direct-url...' \
+pnpm db:clone:prod-to-dev -- --yes
+```
+
+Important:
+
+- This overwrites objects in the target schema on the dev database.
+- Use direct Postgres URLs (not pooled transaction URLs) for both source and target.
+- By default, only the `public` schema is cloned.
+- Add `KEEP_DUMP=1` if you want to keep the temporary dump artifact.
+
 ### Setup
 
 ```bash
@@ -153,3 +201,37 @@ pnpm run dev
 Demo route after seeding:
 
 - `/feedback/demo-coffee-downtown`
+
+## Git and Deployment Workflow
+
+AttuneBridge uses a two-branch release flow:
+
+- `dev` is the integration branch.
+- `main` is the production release branch.
+- Feature/fix/docs/chore branches are created from `dev`.
+- PRs for unit work target `dev` and are squash merged.
+- Release PRs promote `dev -> main` and must use **Create a merge commit**.
+
+## Vercel Project Mapping
+
+- `attune-bridge-dev`
+  - Production branch: `dev`
+  - Purpose: integration/staging environment
+- `attune-bridge-prod`
+  - Production branch: `main`
+  - Purpose: live production environment
+
+Feature branches still get standard Vercel preview deploys.
+
+## Environment Profile Files
+
+Keep these files aligned whenever env vars are added/removed/renamed:
+
+- `.env.example`
+- `.env.local`
+- `.env.development.local` (optional overrides)
+- `.env.production.local` (optional overrides)
+- `.env.vercel.development`
+- `.env.vercel.production`
+
+Never commit real secrets to tracked files.

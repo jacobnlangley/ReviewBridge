@@ -1,0 +1,48 @@
+name: Release Merge Guard
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  enforce-release-merge-commit:
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.head.ref == 'dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify merge strategy for dev -> main promotion
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${MERGE_SHA}" ]; then
+            printf 'Missing merge_commit_sha for %s\n' "${PR_URL}"
+            exit 1
+          fi
+
+          parent_words=$(git rev-list --parents -n 1 "${MERGE_SHA}" | wc -w | tr -d ' ')
+
+          if [ "${parent_words}" -lt 3 ]; then
+            printf 'Release PR was not merged with a merge commit: %s\n' "${PR_URL}"
+            printf 'Use "Create a merge commit" for dev -> main promotions to keep branch ancestry aligned.\n'
+            exit 1
+          fi
+
+          printf 'Release merge strategy verified for %s\n' "${PR_URL}"

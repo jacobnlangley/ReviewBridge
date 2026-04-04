@@ -247,7 +247,7 @@ This repository uses Jacob Langley's personal GitHub identity at the repo level.
 - GitHub account: `jacobnlangley`
 - Git user.name: `jacobnlangley`
 - Git user.email: `jacob.n.langley@gmail.com`
-- Expected remote owner: `jacobnlangley` (for example, `https://github.com/jacobnlangley/attune-bridge`)
+- Expected remote owner: `AttuneBridge` organization (for example, `https://github.com/AttuneBridge/attune-bridge`)
 
 Do not use `fullh3art` credentials in this repository.
 
@@ -258,9 +258,11 @@ Use GitHub CLI account switching before any `gh` command (repo create, PRs, issu
 Expected workflow:
 
 1. Detect remote owner from `origin`.
-2. Switch `gh` auth to that owner.
-3. Verify active account matches expected owner.
+2. Switch `gh` auth to `jacobnlangley`.
+3. Verify active account is `jacobnlangley` and has access to the `AttuneBridge` org.
 4. Run the GitHub operation.
+
+Note: `AttuneBridge` is an organization, so the authenticated `gh` user must be a member account with access. For this repo, that account is `jacobnlangley`.
 
 Preferred command:
 
@@ -283,7 +285,88 @@ gh auth login -h github.com -p https
 
 Agents must not continue with GitHub operations while the active `gh` account is incorrect.
 
-## 13) Definition of Done
+## 13) Git Workflow (dev + main)
+
+### Branch naming
+
+All work branches follow this format:
+
+`prefix/MM-DD-YYYY-contextual-name`
+
+Prefixes:
+
+- `feature/`
+- `fix/`
+- `docs/`
+- `chore/`
+
+### Branch roles (Vercel flow)
+
+Use a two-branch deployment model:
+
+- `dev` is the integration branch and deploys to `attune-bridge-dev` (Vercel dev project production branch = `dev`).
+- `main` is the release branch and deploys to `attune-bridge-prod` (Vercel prod project production branch = `main`).
+- Feature/fix/docs/chore branches are cut from `dev` unless explicitly handling a production hotfix.
+- If a hotfix lands on `main` first, sync it back into `dev` immediately.
+
+### Lifecycle of a unit of work
+
+1. Start from `dev`: `git checkout dev && git pull origin dev`
+2. Create a branch: `git checkout -b feature/MM-DD-YYYY-contextual-name`
+3. Do the work with small, focused commits.
+4. Push branch: `git push -u origin HEAD`
+5. Open PR targeting `dev`.
+6. Squash merge into `dev` after checks pass.
+7. Delete branch after merge.
+8. Pull latest `dev` before next unit of work.
+
+### Promote to production
+
+When changes are ready to ship:
+
+1. Ensure `dev` is green in CI and deployed cleanly on `attune-bridge-dev`.
+2. Open PR from `dev` into `main`.
+3. Merge with **Create a merge commit** after checks pass (do not squash or rebase release promotions).
+4. Confirm `attune-bridge-prod` deployment is healthy.
+
+### Release promotion checklist
+
+Before merging a `dev -> main` release PR:
+
+1. Confirm PR base/head is exactly `dev -> main`.
+2. Confirm CI checks are green on the release PR.
+3. Merge using **Create a merge commit**.
+4. Confirm the rolling draft release PR reopens cleanly after `dev` advances.
+
+### Environment profile sync policy
+
+When adding, removing, or renaming environment variables, keep these files aligned in the same PR:
+
+- `.env.example` (committed contract/template, no secrets)
+- `.env.local` (canonical local runtime profile)
+- `.env.development.local` (optional local overrides for dev)
+- `.env.production.local` (optional local overrides for production-mode testing)
+- `.env.vercel.development` (Vercel import profile for `attune-bridge-dev`)
+- `.env.vercel.production` (Vercel import profile for `attune-bridge-prod`)
+
+Rules:
+
+- Never commit secrets in tracked files.
+- Treat `.env.local` as the source of truth locally.
+- Keep dev-only toggles only in development profiles.
+- Keep production profiles strict by default.
+- If CI/GitHub Actions depends on a variable, update repository secrets and mention it in the PR.
+- Use `pnpm env:vercel:sync-keys` to keep key structure aligned across Vercel profiles.
+- Use `pnpm env:vercel:push-dev` and `pnpm env:vercel:push-prod` to copy values intentionally per environment.
+
+### Rules
+
+- Never force-push to `main`.
+- One unit of work per branch.
+- Keep `dev` and `main` in sync.
+- Rebase stale feature branches onto `dev` before merge when needed.
+
+## 14) Definition of Done
 
 For early iterations, work is done when:
 
