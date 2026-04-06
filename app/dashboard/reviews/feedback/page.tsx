@@ -76,6 +76,16 @@ function buildSmsBody(customerName: string | null, businessName: string) {
   return `Hi ${greeting} - this is ${businessName}. Thank you for your feedback. I am sorry your experience missed the mark. I would like to make it right; could you share a little more detail?`;
 }
 
+function formatMessagePreview(message: string | null) {
+  const normalized = message?.trim() || "No message provided.";
+
+  if (normalized.length <= 120) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 117)}...`;
+}
+
 export default async function DashboardFeedbackInboxPage() {
   const workspace = await getOwnerWorkspaceContextOrRedirect();
 
@@ -123,6 +133,21 @@ export default async function DashboardFeedbackInboxPage() {
           <p className="text-sm text-slate-600">Customer feedback inbox for {workspace.businessName}.</p>
           <Link href="/dashboard" className="text-sm font-medium text-slate-900 underline">
             Back to dashboard home
+          </Link>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/feedback/${workspace.locationSlug}`}
+            className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
+          >
+            Preview customer form
+          </Link>
+          <Link
+            href="/dashboard/reviews/qr"
+            className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
+          >
+            Open business QR code
           </Link>
         </div>
 
@@ -200,112 +225,118 @@ export default async function DashboardFeedbackInboxPage() {
               );
 
               return (
-                <div key={entry.id} className="rounded-xl border border-slate-200 bg-white p-5">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${sentimentStyles[entry.sentiment]}`}
-                    >
-                      {formatSentiment(entry.sentiment)}
-                    </span>
-                    <span
-                      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${statusStyles[entry.status]}`}
-                    >
-                      {formatFeedbackStatus(entry.status)}
-                    </span>
-                    <p className="text-sm font-medium text-slate-900">
-                      {entry.location.business.name} - {entry.location.name}
-                    </p>
-                    <p className="text-xs text-slate-500">{new Date(entry.createdAt).toLocaleString()}</p>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                      Customer Message
-                    </p>
-                    <p className="text-sm text-slate-800">{entry.message?.trim() || "(No message provided)"}</p>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    {entry.wantsFollowUp ? (
-                      <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-medium text-indigo-800">
-                        Follow-up requested
+                <details key={entry.id} className="rounded-xl border border-slate-200 bg-white">
+                  <summary className="list-none cursor-pointer p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${sentimentStyles[entry.sentiment]}`}
+                      >
+                        {formatSentiment(entry.sentiment)}
                       </span>
-                    ) : (
-                      <span className="inline-flex rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
-                        No follow-up requested
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${statusStyles[entry.status]}`}
+                      >
+                        {formatFeedbackStatus(entry.status)}
                       </span>
-                    )}
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 bg-white p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Case Status</p>
-                    <FeedbackStatusControls feedbackId={entry.id} currentStatus={entry.status} />
-                  </div>
-
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <div className="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        Customer Details
+                      <p className="text-sm font-medium text-slate-900">
+                        {entry.location.business.name} - {entry.location.name}
                       </p>
-                      <p>Customer name: {entry.customerName || "(not provided)"}</p>
-                      <p>Customer email: {entry.customerEmail || "(not provided)"}</p>
-                      <p>
-                        Preferred contact method: {formatFollowUpPreference(entry.followUpPreference) || "(none)"}
+                      <p className="text-xs text-slate-500">{new Date(entry.createdAt).toLocaleString()}</p>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-700">{formatMessagePreview(entry.message)}</p>
+                    <p className="mt-2 text-xs font-medium text-slate-500">Open case details</p>
+                  </summary>
+
+                  <div className="border-t border-slate-200 p-5 pt-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Customer Message
                       </p>
-                      <p>Phone: {entry.phone || "(not provided)"}</p>
+                      <p className="text-sm text-slate-800">{entry.message?.trim() || "(No message provided)"}</p>
                     </div>
 
-                    <div className="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        Alert Delivery
-                      </p>
-                      <p>
-                        Email alert: {formatNotificationStatus(latestEmailEvent?.status ?? null)}
-                        {latestEmailEvent?.reason ? ` (${latestEmailEvent.reason})` : ""}
-                      </p>
-                      <p>
-                        SMS alert: {formatNotificationStatus(latestSmsEvent?.status ?? null)}
-                        {latestSmsEvent?.reason ? ` (${latestSmsEvent.reason})` : ""}
-                      </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                      {entry.wantsFollowUp ? (
+                        <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-medium text-indigo-800">
+                          Follow-up requested
+                        </span>
+                      ) : (
+                        <span className="inline-flex rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 font-medium text-slate-700">
+                          No follow-up requested
+                        </span>
+                      )}
                     </div>
-                  </div>
 
-                  {actions.length > 0 ? (
-                    <div className="mt-3 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Quick Actions</p>
-                      <div className="flex flex-wrap gap-2 text-xs font-medium">
-                        {actions.map((action) => (
-                          <a
-                            key={action.href}
-                            href={action.href}
-                            className="inline-flex rounded-full border border-slate-300 bg-white px-2.5 py-1 text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
-                          >
-                            {action.label}
-                          </a>
-                        ))}
+                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Case Status</p>
+                      <FeedbackStatusControls feedbackId={entry.id} currentStatus={entry.status} />
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <div className="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Customer Details
+                        </p>
+                        <p>Customer name: {entry.customerName || "(not provided)"}</p>
+                        <p>Customer email: {entry.customerEmail || "(not provided)"}</p>
+                        <p>
+                          Preferred contact method: {formatFollowUpPreference(entry.followUpPreference) || "(none)"}
+                        </p>
+                        <p>Phone: {entry.phone || "(not provided)"}</p>
                       </div>
 
-                      {preferredAction ? (
-                        <p className="text-xs text-slate-500">Showing the customer&apos;s preferred contact channel.</p>
-                      ) : null}
-
-                      {preferredMethodMissing ? (
-                        <p className="text-xs text-amber-700">
-                          Preferred contact method is unavailable for this entry, so fallback options are shown.
+                      <div className="space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Alert Delivery
                         </p>
-                      ) : null}
+                        <p>
+                          Email alert: {formatNotificationStatus(latestEmailEvent?.status ?? null)}
+                          {latestEmailEvent?.reason ? ` (${latestEmailEvent.reason})` : ""}
+                        </p>
+                        <p>
+                          SMS alert: {formatNotificationStatus(latestSmsEvent?.status ?? null)}
+                          {latestSmsEvent?.reason ? ` (${latestSmsEvent.reason})` : ""}
+                        </p>
+                      </div>
                     </div>
-                  ) : null}
 
-                  <div className="mt-3">
-                    <Link
-                      href={`/dashboard/reviews/feedback/${entry.id}`}
-                      className="text-xs font-medium text-slate-900 underline underline-offset-2"
-                    >
-                      View full feedback details
-                    </Link>
+                    {actions.length > 0 ? (
+                      <div className="mt-3 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Quick Actions</p>
+                        <div className="flex flex-wrap gap-2 text-xs font-medium">
+                          {actions.map((action) => (
+                            <a
+                              key={action.href}
+                              href={action.href}
+                              className="inline-flex rounded-full border border-slate-300 bg-white px-2.5 py-1 text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                            >
+                              {action.label}
+                            </a>
+                          ))}
+                        </div>
+
+                        {preferredAction ? (
+                          <p className="text-xs text-slate-500">Showing the customer&apos;s preferred contact channel.</p>
+                        ) : null}
+
+                        {preferredMethodMissing ? (
+                          <p className="text-xs text-amber-700">
+                            Preferred contact method is unavailable for this entry, so fallback options are shown.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-3">
+                      <Link
+                        href={`/dashboard/reviews/feedback/${entry.id}`}
+                        className="text-xs font-medium text-slate-900 underline underline-offset-2"
+                      >
+                        View full feedback details
+                      </Link>
+                    </div>
                   </div>
-                </div>
+                </details>
               );
             })}
           </div>
