@@ -8,10 +8,27 @@ import { evaluateBusinessAccess } from "@/lib/subscription-access";
 
 type FeedbackPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 };
 
-export default async function FeedbackPage({ params }: FeedbackPageProps) {
+function sanitizeReturnTo(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes("://")) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+export default async function FeedbackPage({ params, searchParams }: FeedbackPageProps) {
   const { slug } = await params;
+  const query = await searchParams;
+  const returnTo = sanitizeReturnTo(typeof query.returnTo === "string" ? query.returnTo : undefined);
 
   let location: {
     slug: string;
@@ -152,6 +169,11 @@ export default async function FeedbackPage({ params }: FeedbackPageProps) {
           <p className="text-sm text-slate-600">
             This takes less than a minute and helps the team improve.
           </p>
+          {returnTo ? (
+            <Link href={returnTo} className="inline-flex text-sm font-medium text-slate-900 underline">
+              Back to dashboard
+            </Link>
+          ) : null}
         </div>
         <FeedbackExperience
           slug={location.slug}
