@@ -78,13 +78,17 @@ export default async function DashboardFeedbackInboxPage() {
 
         <div className="flex flex-wrap gap-3">
           <Link
-            href={`/feedback/${workspace.locationSlug}`}
+            href={`/feedback/${workspace.locationSlug}?returnTo=/dashboard/reviews/feedback`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
           >
             Preview customer form
           </Link>
           <Link
             href="/dashboard/reviews/qr"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 hover:bg-slate-100"
           >
             Open business QR code
