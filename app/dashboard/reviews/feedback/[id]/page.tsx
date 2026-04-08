@@ -222,14 +222,6 @@ export default async function DashboardFeedbackDetailPage({ params }: FeedbackDe
     },
   });
 
-  const isReaskEligible =
-    feedback.status === FeedbackStatus.RESOLVED &&
-    feedback.recoveryOutcome === RecoveryOutcome.SAVED &&
-    (feedback.sentiment === Sentiment.NEGATIVE || feedback.sentiment === Sentiment.NEUTRAL) &&
-    Boolean(feedback.resolvedAt) &&
-    Boolean(feedback.resolvedAt && feedback.resolvedAt.getTime() <= Date.now() - 24 * 60 * 60 * 1000) &&
-    !latestReaskEvent;
-
   if (!feedback) {
     return (
       <main className="mx-auto w-full max-w-5xl px-4 py-10 md:py-14">
@@ -243,6 +235,14 @@ export default async function DashboardFeedbackDetailPage({ params }: FeedbackDe
       </main>
     );
   }
+
+  const isReaskEligible =
+    feedback.status === FeedbackStatus.RESOLVED &&
+    feedback.recoveryOutcome === RecoveryOutcome.SAVED &&
+    (feedback.sentiment === Sentiment.NEGATIVE || feedback.sentiment === Sentiment.NEUTRAL) &&
+    Boolean(feedback.resolvedAt) &&
+    Boolean(feedback.resolvedAt && feedback.resolvedAt.getTime() <= Date.now() - 24 * 60 * 60 * 1000) &&
+    !latestReaskEvent;
 
   const hasEmail = Boolean(feedback.customerEmail);
   const phoneHref = feedback.phone ? toPhoneHref(feedback.phone) : null;
