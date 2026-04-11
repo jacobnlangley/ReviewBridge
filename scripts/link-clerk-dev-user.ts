@@ -29,6 +29,10 @@ function loadEnvFile(filePath: string) {
       value = value.slice(1, -1);
     }
 
+    if (typeof process.env[key] === "string" && process.env[key]!.length > 0) {
+      continue;
+    }
+
     process.env[key] = value;
   }
 }
