@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppModule, BusinessMembershipRole } from "@prisma/client";
+import { AppModule, BusinessMembershipRole, SystemRole } from "@prisma/client";
 import { headers } from "next/headers";
 import { DashboardNav } from "@/components/navigation/dashboard-nav";
 import { PublicHeaderNav } from "@/components/navigation/public-header-nav";
@@ -12,6 +12,10 @@ import { prisma } from "@/lib/prisma";
 
 type DashboardNavModule = "REVIEWS" | "SCHEDULER" | "LOYALTY" | "MISSED_CALL_TEXTBACK";
 
+function isSystemAdmin(role: SystemRole) {
+  return role === SystemRole.SUPER_ADMIN || role === SystemRole.ADMIN;
+}
+
 export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -20,20 +24,28 @@ export default async function DashboardLayout({
   const host = requestHeaders.get("host");
   const isDemoMode = isDemoModeAllowedForHost(host);
 
-  const businessId = (
-    await prisma.businessMembership.findFirst({
-      where: {
-        userId: identity.userId,
-        role: BusinessMembershipRole.OWNER,
-      },
-      select: {
-        businessId: true,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    })
-  )?.businessId;
+  const ownerMembership = await prisma.businessMembership.findFirst({
+    where: {
+      userId: identity.userId,
+      role: BusinessMembershipRole.OWNER,
+    },
+    select: {
+      businessId: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  const fallbackBusiness =
+    !ownerMembership && isSystemAdmin(identity.systemRole)
+      ? await prisma.business.findFirst({
+          select: { id: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : null;
+
+  const businessId = ownerMembership?.businessId ?? fallbackBusiness?.id ?? null;
 
   const enabledModules = businessId
     ? await (async () => {
